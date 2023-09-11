@@ -4,6 +4,7 @@ import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -23,11 +24,11 @@ public class Controller {
     @GET
     @Path("v1/download")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response downloadStatement(@MultipartForm RequestDTO requestDTO) {
         DownloaderRequest request = new DownloaderRequest();
 //        request.setDate("2023-09-06");
 //        request.setDigitalAccountId("dac_D2F9F9B742545428");
-
         request.setDate(requestDTO.getDate());
         request.setDigitalAccountId(requestDTO.getPayeeId());
 
@@ -35,6 +36,13 @@ public class Controller {
 
         orchestrator.run(request, response);
 
-        return Response.status(Response.Status.ACCEPTED).build();
+        return createResponse(response);
+    }
+
+    private Response createResponse(DownloaderResponse response) {
+        Response.ResponseBuilder response2 = Response.ok(response.getStatementCsv());
+        response2.header("Content-Disposition", "attachment;filename=" + "abc.csv");
+        response2.header("Content-Type", "text/csv");
+        return response2.build();
     }
 }
