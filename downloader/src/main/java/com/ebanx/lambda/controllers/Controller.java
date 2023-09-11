@@ -41,7 +41,7 @@ public class Controller {
 
     private Response createResponse(DownloaderResponse response) {
         Response.ResponseBuilder response2 = Response.ok(response.getStatementCsv());
-        response2.header("Content-Disposition", "attachment;filename=" + "abc.csv");
+        response2.header("Content-Disposition", "attachment;filename=" + "account-statement.csv");
         response2.header("Content-Type", "text/csv");
         return response2.build();
     }
