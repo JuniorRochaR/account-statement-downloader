@@ -5,6 +5,11 @@ public class DownloaderRequest {
     private String digitalAccountId;
     private String date;
 
+    public DownloaderRequest(String digitalAccountId, String date) {
+        this.digitalAccountId = digitalAccountId;
+        this.date = date;
+    }
+
     public String getDigitalAccountId() {
         return digitalAccountId;
     }
