@@ -11,6 +11,23 @@ Globals:
         DISABLE_SIGNAL_HANDLERS: true
 
 Resources:
+  AuthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: api-authorizer/target/function.zip
+      Handler: com.ebanx.lambda.ApiAuthorizerHandler::handleRequest
+      Runtime: java11
+
+  ApiAuthorizerGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Auth:
+        DefaultAuthorizer: MyLambdaTokenAuthorizer
+        Authorizers:
+          MyLambdaTokenAuthorizer:
+            FunctionArn: !GetAtt AuthFunction.Arn
+
   StatementDownloaderLambda:
     Type: AWS::Serverless::Function
     Properties:
@@ -20,3 +37,10 @@ Resources:
       CodeUri: downloader/target/function.zip
       MemorySize: 512
       Timeout: 900
+      Events:
+        ApiResource:
+          Type: Api
+          Properties:
+            Path: "/statement/v1/download"
+            Method: "GET"
+            RestApiId: !Ref ApiAuthorizerGateway

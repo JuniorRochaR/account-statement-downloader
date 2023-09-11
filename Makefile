@@ -7,7 +7,10 @@ build-project 1:
 	mvn clean package -Dquarkus.profile=dev -DskipTests
 
 exec: build-project upload-statement
-	sam local invoke --template sam-dev.yaml --event downloader/fake_event.json StatementDownloaderLambda
+	sam local start-api --template sam-dev.yaml
+
+debug: build-project upload-statement
+	sam local start-api --template sam-dev.yaml --debug --debug-port 5558
 
 upload-statement:
 	aws --endpoint-url=http://localhost:4566 s3 cp docs/example.csv s3://ebanx.sta/2023/9/6/1234.csv
