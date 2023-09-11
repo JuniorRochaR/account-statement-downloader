@@ -1,0 +1,22 @@
+# TEMPLATE FOR LOCAL USAGE ONLY
+
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AWS Serverless Quarkus - statement-downloader
+
+Globals:
+  Function:
+    Environment:
+      Variables:
+        DISABLE_SIGNAL_HANDLERS: true
+
+Resources:
+  StatementDownloaderLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 'statement-downloader'
+      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
+      Runtime: java11
+      CodeUri: downloader/target/function.zip
+      MemorySize: 512
+      Timeout: 900

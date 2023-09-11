@@ -1,0 +1,11 @@
+version: "3.1"
+
+services:
+  localstack:
+    image: localstack/localstack
+    container_name: statement-downloader
+    network_mode: bridge
+    environment:
+      - SERVICES=s3,lambda,cloudformation,iam,events,sqs,secretsmanager
+    ports:
+      - "4566:4566"
