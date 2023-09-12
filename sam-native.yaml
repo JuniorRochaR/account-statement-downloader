@@ -21,6 +21,7 @@ Resources:
   AuthFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: 'statement-downloader-auth'
       CodeUri: api-authorizer/target/function.zip
       Handler: not.used.in.provided.runtime
       Runtime: provided
