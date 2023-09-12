@@ -14,7 +14,7 @@ Globals:
 Parameters:
   AccountStatementBucketName:
     Type: String
-    Default: "ebanx.sta"
+    Default: "account-statement-bucket-test"
     Description: "Bucket that stores account statements in csv format"
 
 Resources:
@@ -22,8 +22,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: api-authorizer/target/function.zip
-      Handler: com.ebanx.lambda.ApiAuthorizerHandler::handleRequest
-      Runtime: java11
+      Handler: not.used.in.provided.runtime
+      Runtime: provided
 
   ApiAuthorizerGateway:
     Type: AWS::Serverless::Api
@@ -39,8 +39,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: 'statement-downloader'
-      Handler: io.quarkus.amazon.lambda.runtime.QuarkusStreamHandler::handleRequest
-      Runtime: java11
+      Handler: not.used.in.provided.runtime
+      Runtime: provided
       CodeUri: downloader/target/function.zip
       MemorySize: 512
       Timeout: 900

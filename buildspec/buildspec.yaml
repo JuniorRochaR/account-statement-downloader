@@ -1,0 +1,16 @@
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - echo "Starting packaging app - $(date)"
+  build:
+    commands:
+      - mvn package -Pnative
+      - sam package --template-file sam-native.yaml --output-template-file packaged.yaml --s3-bucket $ARTIFACT_STORE_BUCKET --region $REGION
+
+  post_build:
+    commands:
+      - echo "Packaging App DONE - $(date)"
+artifacts:
+  files:
+    - packaged.yaml

@@ -1,0 +1,375 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'Sisbajud Pipeline Stack'
+
+Parameters:
+  BaseStackName:
+    Type: String
+    Default: 'account-statement-downloader-pipeline'
+    AllowedValues:
+      - 'account-statement-downloader-pipeline'
+
+  DeployStackName:
+    Type: String
+    Default: 'account-statement-downloader'
+    AllowedValues:
+      - 'account-statement-downloader'
+
+  BuildspecLocation:
+    Type: String
+    Description: 'The path for your buildspec file. e.g: ./buildspec.yaml'
+    Default: './buildspec/'
+
+  GithubOwner:
+    Type: String
+    Description: 'The owner of the GitHub repository. e.g: ebanx'
+    Default: ebanx
+
+  GithubRepository:
+    Type: String
+    Default: 'account-statement-downloader'
+
+  GithubBranch:
+    Type: String
+    Description: 'The name of the branch you want to setup the webhook e.g: master'
+    Default: 'main'
+
+  GithubCodePipelineCloneFormat:
+    Type: String
+    Description: 'The type of clone to be performed by codepipeline. Only use CODEBUILD_CLONE_REF if you need the ".git" folder'
+    Default: CODE_ZIP
+    AllowedValues:
+      - CODE_ZIP
+      - CODEBUILD_CLONE_REF
+
+  GithubConnectionArn:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Description: 'The SSM Parameter name that contains the connection ARN. Pegar essa info das conexoes do codebuild.'
+    Default: /core/build/github/connection
+
+  BuildImage:
+    Type: String
+    Description: 'The image to be used by Codebuild: https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-available.html'
+    Default: 'aws/codebuild/amazonlinux2-x86_64-standard:3.0'
+    AllowedValues:
+      - 'aws/codebuild/standard:4.0'
+      - 'aws/codebuild/amazonlinux2-x86_64-standard:3.0'
+
+Resources:
+  #CODEBUILD SETUP
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub '${BaseStackName}-codebuild'
+      Description: !Sub '${BaseStackName} build project'
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: !Sub '${BuildspecLocation}buildspec.yaml'
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: !Ref BuildImage
+        PrivilegedMode: true
+        ImagePullCredentialsType: CODEBUILD
+        EnvironmentVariables:
+          - Name: ARTIFACT_STORE_BUCKET
+            Value: '{{resolve:ssm:/core/build/artifact-store:1}}'
+          - Name: REGION
+            Value: 'us-east-1'
+
+
+  #CODEPIPELINE SETUP
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Type: S3
+        Location: '{{resolve:ssm:/core/build/artifact-store:1}}'
+      Name: !Sub ${BaseStackName}
+      RoleArn: !GetAtt CodePipelineExecutionRole.Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeStarSourceConnection
+                Version: '1'
+              Configuration:
+                ConnectionArn: !Ref GithubConnectionArn
+                FullRepositoryId: !Sub ${GithubOwner}/${GithubRepository}
+                BranchName: !Ref GithubBranch
+                OutputArtifactFormat: !Ref GithubCodePipelineCloneFormat
+              OutputArtifacts:
+                - Name: SourceCodeAsZip
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: BuildArtifact
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: '1'
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              InputArtifacts:
+                - Name: SourceCodeAsZip
+              OutputArtifacts:
+                - Name: BuildArtifactAsZip
+              RunOrder: 1
+        - Name: Production
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              InputArtifacts:
+                - Name: BuildArtifactAsZip
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                RoleArn: !GetAtt CloudFormationExecutionRole.Arn
+                StackName: !Sub '${DeployStackName}'
+                TemplatePath: BuildArtifactAsZip::packaged.yaml
+                Capabilities: CAPABILITY_AUTO_EXPAND,CAPABILITY_IAM
+              RunOrder: 1
+
+  #
+  # IAM Roles
+  #
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${BaseStackName}-codebuild-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Action:
+              - 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
+        - '{{resolve:ssm:/core/build/managed-policies/logs:1}}'
+      Policies:
+        - PolicyName: s3
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:*'
+                Resource: '*'
+        - PolicyName: ssm
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'ssm:Get*'
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}*'
+              - Effect: 'Allow'
+                Action:
+                  - 'ssm:DeleteParameter'
+                Resource: '*'
+
+  CodePipelineExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${BaseStackName}-codepipeline-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          Effect: Allow
+          Principal:
+            Service:
+              - codepipeline.amazonaws.com
+              - cloudformation.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodePipeline_FullAccess
+        - '{{resolve:ssm:/core/build/managed-policies/logs:1}}'
+      Policies:
+        - PolicyName: lambda
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'lambda:Invoke*'
+                  - 'lambda:ListFunctions'
+                Resource: '*'
+        - PolicyName: codebuild
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'codebuild:BatchGetBuilds'
+                  - 'codebuild:StartBuild'
+                Resource:
+                  - !Sub 'arn:aws:codebuild:*:*:project/${AWS::StackName}*'
+        - PolicyName: cloudformation
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'cloudformation:Create*'
+                  - 'cloudformation:Delete*'
+                  - 'cloudformation:Describe*'
+                  - 'cloudformation:Execute*'
+                  - 'cloudformation:Set*'
+                  - 'cloudformation:Update*'
+                  - 'cloudformation:Validate*'
+                Resource:
+                  - '*'
+        - PolicyName: codestart
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: codestar-connections:UseConnection
+                Resource: '*'
+        - PolicyName: s3
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:*'
+                Resource: '*'
+        - PolicyName: iam
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'iam:PassRole'
+                Resource: '*'
+
+  CloudFormationExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${BaseStackName}-cloudformation-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          Effect: 'Allow'
+          Principal:
+            Service: cloudformation.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+        - '{{resolve:ssm:/core/build/managed-policies/logs:1}}'
+      Policies:
+        - PolicyName: s3
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:*'
+                Resource: '*'
+        - PolicyName: lambda
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'lambda:*'
+                Resource: '*'
+        - PolicyName: iam
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'iam:CreatePolicy'
+                  - 'iam:AttachRolePolicy'
+                  - 'iam:CreateRole'
+                  - 'iam:DeleteRole'
+                  - 'iam:DeleteRolePolicy'
+                  - 'iam:DetachRolePolicy'
+                  - 'iam:GetRole'
+                  - 'iam:GetRolePolicy'
+                  - 'iam:PassRole'
+                  - 'iam:PutRolePolicy'
+                Resource: '*'
+        - PolicyName: dynamo
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:*'
+                Resource: '*'
+        - PolicyName: cloudwatch
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'cloudwatch:*'
+                Resource: '*'
+        - PolicyName: sqs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'sqs:*'
+                Resource:
+                  - '*'
+        - PolicyName: secretsmanager
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'secretsmanager:Get*'
+                Resource:
+                  - '*'
+        - PolicyName: events
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'events:Delete*'
+                  - 'events:Describe*'
+                  - 'events:Put*'
+                  - 'events:Remove*'
+                Resource: '*'
+        - PolicyName: sns
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: 'Allow'
+                Action:
+                  - 'SNS:Subscribe'
+                Resource: '*'
+        - PolicyName: securitygroup
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ec2:DescribeSubnets'
+                  - 'ec2:DescribeVpcs'
+                  - 'ec2:DescribeSecurityGroups'
+                  - 'ec2:CreateSecurityGroup'
+                  - 'ec2:DeleteSecurityGroup'
+                  - 'ec2:DescribeNetworkInterfaces'
+                  - 'ec2:CreateNetworkInterface'
+                  - 'ec2:DeleteNetworkInterface'
+                  - 'ec2:CreateTags'
+                Resource: '*'
