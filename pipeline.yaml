@@ -22,7 +22,7 @@ Parameters:
   GithubOwner:
     Type: String
     Description: 'The owner of the GitHub repository. e.g: ebanx'
-    Default: ebanx
+    Default: JuniorRochaR
 
   GithubRepository:
     Type: String
@@ -303,6 +303,7 @@ Resources:
                   - 'iam:GetRolePolicy'
                   - 'iam:PassRole'
                   - 'iam:PutRolePolicy'
+                  - 'iam:TagRole'
                 Resource: '*'
         - PolicyName: dynamo
           PolicyDocument:
@@ -373,3 +374,12 @@ Resources:
                   - 'ec2:DeleteNetworkInterface'
                   - 'ec2:CreateTags'
                 Resource: '*'
+        - PolicyName: apigateway
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "apigateway:*"
+                Resource:
+                  - "*"
