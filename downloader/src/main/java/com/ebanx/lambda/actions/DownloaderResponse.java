@@ -4,7 +4,7 @@ import java.io.InputStream;
 
 public class DownloaderResponse {
 
-    private static final String FILE_EXTENSION = ".csv";
+    private static final String FILE_EXTENSION = ".zip";
 
     private Long payeeId;
     private String dateBucketPath;
