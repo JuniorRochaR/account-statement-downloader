@@ -8,7 +8,7 @@ public class DownloaderResponse {
 
     private Long payeeId;
     private String dateBucketPath;
-    private InputStream statementCsv;
+    private String statementCsv;
 
     public Long getPayeeId() {
         return payeeId;
@@ -26,11 +26,11 @@ public class DownloaderResponse {
         this.dateBucketPath = dateBucketPath;
     }
 
-    public InputStream getStatementCsv() {
+    public String getStatementCsv() {
         return statementCsv;
     }
 
-    public void setStatementCsv(InputStream statementCsv) {
+    public void setStatementCsv(String statementCsv) {
         this.statementCsv = statementCsv;
     }
 

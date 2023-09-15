@@ -1,6 +1,7 @@
 package com.ebanx.lambda.service;
 
 import java.io.InputStream;
+import java.time.Duration;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -12,6 +13,9 @@ import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 @ApplicationScoped
 public class S3Service {
@@ -21,6 +25,9 @@ public class S3Service {
     @Inject
     S3Client s3Client;
 
+    @Inject
+    S3Presigner s3Presigner;
+
     @ConfigProperty(name = "statement.bucket.name")
     String bucketName;
 
@@ -29,5 +36,26 @@ public class S3Service {
         ResponseInputStream<GetObjectResponse> object = s3Client.getObject(GetObjectRequest.builder().bucket(bucketName).key(keyFileName).build());
         LOG.debugf("FILE RECEIVED SUCCESSFULLY");
         return object;
+    }
+
+    public String getFileUrl(String keyFileName) {
+        LOG.debugf("GETTING FILE FROM BUCKET AND ITS STREAM - Bucket name: %s, Key: %s", bucketName, keyFileName);
+        PresignedGetObjectRequest presignedGetObjectRequest = s3Presigner.presignGetObject(getObjectPresignRequest(getObjectRequest(bucketName, keyFileName)));
+        LOG.debugf("FILE RECEIVED SUCCESSFULLY");
+        return presignedGetObjectRequest.url().toString();
+    }
+
+    private GetObjectRequest getObjectRequest(String bucketName, String keyName) {
+        return GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(keyName)
+                .build();
+    }
+
+    private GetObjectPresignRequest getObjectPresignRequest(GetObjectRequest getObjectRequest) {
+        return GetObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofMinutes(10))
+                .getObjectRequest(getObjectRequest)
+                .build();
     }
 }
