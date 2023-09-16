@@ -9,6 +9,7 @@ import javax.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
+import io.quarkus.runtime.configuration.ProfileManager;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -26,6 +27,9 @@ public class S3Service {
     @Inject
     S3Client s3Client;
 
+    @Inject
+    S3Presigner s3Presigner;
+
     @ConfigProperty(name = "statement.bucket.name")
     String bucketName;
 
@@ -37,15 +41,17 @@ public class S3Service {
     }
 
     public String getFileUrl(String keyFileName) {
-        S3Presigner s3Presigner = getS3Presigner();
+        getS3Presigner();
         LOG.debugf("GETTING FILE FROM BUCKET AND ITS STREAM - Bucket name: %s, Key: %s", bucketName, keyFileName);
         PresignedGetObjectRequest presignedGetObjectRequest = s3Presigner.presignGetObject(getObjectPresignRequest(getObjectRequest(bucketName, keyFileName)));
         LOG.debugf("FILE RECEIVED SUCCESSFULLY");
         return presignedGetObjectRequest.url().toString();
     }
 
-    private S3Presigner getS3Presigner() {
-        return S3Presigner.builder().region(Region.US_EAST_1).build();
+    private void getS3Presigner() {
+        if (!"dev".equals(ProfileManager.getActiveProfile())) {
+            s3Presigner = S3Presigner.builder().region(Region.US_EAST_1).build();
+        }
     }
 
     private GetObjectRequest getObjectRequest(String bucketName, String keyName) {
