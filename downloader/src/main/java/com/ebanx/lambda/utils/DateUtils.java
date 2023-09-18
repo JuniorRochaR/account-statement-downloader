@@ -8,12 +8,16 @@ public class DateUtils {
 
     public static String dateToBucketPath(String date) {
         if (date == null) {
-            throw new AccountStatementApiException("date param cannot be null");
+            throw new AccountStatementApiException("Date param cannot be null");
         }
-        int year = Integer.parseInt(date.substring(0, 4));
-        int month = Integer.parseInt(date.substring(5, 7));
-        int day = Integer.parseInt(date.substring(8, 10));
+        try {
+            int year = Integer.parseInt(date.substring(0, 4));
+            int month = Integer.parseInt(date.substring(5, 7));
+            int day = Integer.parseInt(date.substring(8, 10));
 
-        return year + BACKSLASH + month + BACKSLASH + day + BACKSLASH;
+            return year + BACKSLASH + month + BACKSLASH + day + BACKSLASH;
+        } catch (Exception e) {
+            throw new AccountStatementApiException("Date parameter does not have the expected pattern (yyyy-MM-dd)", e);
+        }
     }
 }
