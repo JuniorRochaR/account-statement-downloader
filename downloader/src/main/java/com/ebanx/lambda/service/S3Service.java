@@ -38,9 +38,9 @@ public class S3Service {
             s3Client.headObject(getHeadObjectRequest(bucketName, keyFileName));
         } catch (S3Exception e) {
             if (NOT_FOUND.getStatusCode() == e.statusCode()) {
-                throw new AccountStatementApiException(e.getMessage(), e);
+                throw new AccountStatementApiException("There is no account statement for the given parameters", e);
             }
-            throw new AccountStatementApiException(e.getMessage(), e);
+            throw new AccountStatementApiException("Error when checking account statements", e);
         }
     }
 
@@ -51,7 +51,7 @@ public class S3Service {
                     s3Presigner.presignGetObject(getObjectPresignRequest(getObjectRequest(bucketName, keyFileName)));
             return presignedGetObjectRequest.url().toString();
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage(), e);
+            throw new AccountStatementApiException("Error when generating account statement download URL", e);
         }
     }
 

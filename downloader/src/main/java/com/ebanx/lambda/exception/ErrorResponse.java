@@ -2,20 +2,20 @@ package com.ebanx.lambda.exception;
 
 public class ErrorResponse {
 
-    private String errorCode;
+    private int statusCode;
     private String errorMessage;
 
-    public ErrorResponse(String errorCode, String errorMessage) {
-        this.errorCode = errorCode;
+    public ErrorResponse(int statusCode, String errorMessage) {
+        this.statusCode = statusCode;
         this.errorMessage = errorMessage;
     }
 
-    public String getErrorCode() {
-        return errorCode;
+    public int getStatusCode() {
+        return statusCode;
     }
 
-    public void setErrorCode(String errorCode) {
-        this.errorCode = errorCode;
+    public void setStatusCode(int statusCode) {
+        this.statusCode = statusCode;
     }
 
     public String getErrorMessage() {
