@@ -15,12 +15,16 @@ public class Orchestrator extends Executor<DownloaderRequest, DownloaderResponse
     ConvertDateAction convertDateAction;
 
     @Inject
-    ReadS3Action readS3Action;
+    ValidateFileAction validateFileAction;
+
+    @Inject
+    GenerateDownloadUrlAction generateDownloadUrlAction;
 
     @Override
     protected void setUp() {
         add(retrievePayeeIdAction);
         add(convertDateAction);
-        add(readS3Action);
+        add(validateFileAction);
+        add(generateDownloadUrlAction);
     }
 }

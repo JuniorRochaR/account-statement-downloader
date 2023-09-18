@@ -9,17 +9,16 @@ import com.ebanx.lambda.service.S3Service;
 import org.jboss.logging.Logger;
 
 @ApplicationScoped
-public class ReadS3Action implements Command<DownloaderRequest, DownloaderResponse> {
+public class GenerateDownloadUrlAction implements Command<DownloaderRequest, DownloaderResponse> {
 
-    private static final Logger LOG = Logger.getLogger(ReadS3Action.class);
+    private static final Logger LOG = Logger.getLogger(GenerateDownloadUrlAction.class);
 
     @Inject
-    S3Service service;
+    S3Service s3Service;
 
     @Override
     public void execute(DownloaderRequest request, DownloaderResponse response) {
-        LOG.info(response.getFileName());
-        response.setFileUrl(service.getFileUrl(response.getFileName()));
-        LOG.info(response.getFileUrl());
+        response.setFileUrl(s3Service.getFileUrl(response.getFileName()));
+        LOG.infof("Download URL generated: %s", response.getFileUrl());
     }
 }

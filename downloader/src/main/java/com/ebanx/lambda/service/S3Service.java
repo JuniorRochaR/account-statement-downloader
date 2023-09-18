@@ -1,28 +1,28 @@
 package com.ebanx.lambda.service;
 
-import java.io.InputStream;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+
 import java.time.Duration;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
+import com.ebanx.lambda.exception.AccountStatementApiException;
+
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.logging.Logger;
 
 import io.quarkus.runtime.configuration.ProfileManager;
-import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.model.GetObjectResponse;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
 @ApplicationScoped
 public class S3Service {
-
-    private static final Logger LOG = Logger.getLogger(S3Service.class);
 
     @Inject
     S3Client s3Client;
@@ -33,19 +33,26 @@ public class S3Service {
     @ConfigProperty(name = "statement.bucket.name")
     String bucketName;
 
-    public InputStream getFileStream(String keyFileName) {
-        LOG.debugf("GETTING FILE FROM BUCKET AND ITS STREAM - Bucket name: %s, Key: %s", bucketName, keyFileName);
-        ResponseInputStream<GetObjectResponse> object = s3Client.getObject(GetObjectRequest.builder().bucket(bucketName).key(keyFileName).build());
-        LOG.debugf("FILE RECEIVED SUCCESSFULLY");
-        return object;
+    public void findFile(String keyFileName) {
+        try {
+            s3Client.headObject(getHeadObjectRequest(bucketName, keyFileName));
+        } catch (S3Exception e) {
+            if (NOT_FOUND.getStatusCode() == e.statusCode()) {
+                throw new AccountStatementApiException(e.getMessage(), e);
+            }
+            throw new AccountStatementApiException(e.getMessage(), e);
+        }
     }
 
     public String getFileUrl(String keyFileName) {
-        getS3Presigner();
-        LOG.debugf("GETTING FILE FROM BUCKET AND ITS STREAM - Bucket name: %s, Key: %s", bucketName, keyFileName);
-        PresignedGetObjectRequest presignedGetObjectRequest = s3Presigner.presignGetObject(getObjectPresignRequest(getObjectRequest(bucketName, keyFileName)));
-        LOG.debugf("FILE RECEIVED SUCCESSFULLY");
-        return presignedGetObjectRequest.url().toString();
+        try {
+            getS3Presigner();
+            PresignedGetObjectRequest presignedGetObjectRequest =
+                    s3Presigner.presignGetObject(getObjectPresignRequest(getObjectRequest(bucketName, keyFileName)));
+            return presignedGetObjectRequest.url().toString();
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
     }
 
     private void getS3Presigner() {
@@ -65,6 +72,13 @@ public class S3Service {
         return GetObjectPresignRequest.builder()
                 .signatureDuration(Duration.ofMinutes(10))
                 .getObjectRequest(getObjectRequest)
+                .build();
+    }
+
+    private HeadObjectRequest getHeadObjectRequest(String bucketName, String keyName) {
+        return HeadObjectRequest.builder()
+                .bucket(bucketName)
+                .key(keyName)
                 .build();
     }
 }
