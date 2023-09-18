@@ -46,7 +46,7 @@ public class S3Service {
 
     public String getFileUrl(String keyFileName) {
         try {
-            getS3Presigner();
+//            getS3Presigner();
             PresignedGetObjectRequest presignedGetObjectRequest =
                     s3Presigner.presignGetObject(getObjectPresignRequest(getObjectRequest(bucketName, keyFileName)));
             return presignedGetObjectRequest.url().toString();
@@ -55,11 +55,11 @@ public class S3Service {
         }
     }
 
-    private void getS3Presigner() {
-        if (!"dev".equals(ProfileManager.getActiveProfile())) {
-            s3Presigner = S3Presigner.builder().region(Region.US_EAST_1).build();
-        }
-    }
+//    private void getS3Presigner() {
+//        if (!"dev".equals(ProfileManager.getActiveProfile())) {
+//            s3Presigner = S3Presigner.builder().region(Region.US_EAST_1).build();
+//        }
+//    }
 
     private GetObjectRequest getObjectRequest(String bucketName, String keyName) {
         return GetObjectRequest.builder()
