@@ -19,7 +19,7 @@ public class ReadS3Action implements Command<DownloaderRequest, DownloaderRespon
     @Override
     public void execute(DownloaderRequest request, DownloaderResponse response) {
         LOG.info(response.getFileName());
-        response.setStatementCsv(service.getFileUrl(response.getFileName()));
-        LOG.info(response.getStatementCsv());
+        response.setFileUrl(service.getFileUrl(response.getFileName()));
+        LOG.info(response.getFileUrl());
     }
 }

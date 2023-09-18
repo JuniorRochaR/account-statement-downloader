@@ -1,14 +1,12 @@
 package com.ebanx.lambda.actions;
 
-import java.io.InputStream;
-
 public class DownloaderResponse {
 
     private static final String FILE_EXTENSION = ".zip";
 
     private Long payeeId;
     private String dateBucketPath;
-    private String statementCsv;
+    private String fileUrl;
 
     public Long getPayeeId() {
         return payeeId;
@@ -26,12 +24,12 @@ public class DownloaderResponse {
         this.dateBucketPath = dateBucketPath;
     }
 
-    public String getStatementCsv() {
-        return statementCsv;
+    public String getFileUrl() {
+        return fileUrl;
     }
 
-    public void setStatementCsv(String statementCsv) {
-        this.statementCsv = statementCsv;
+    public void setFileUrl(String fileUrl) {
+        this.fileUrl = fileUrl;
     }
 
     public String getFileName() {

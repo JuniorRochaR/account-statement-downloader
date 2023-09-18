@@ -11,6 +11,7 @@ import javax.ws.rs.core.Response;
 import com.ebanx.lambda.actions.DownloaderRequest;
 import com.ebanx.lambda.actions.DownloaderResponse;
 import com.ebanx.lambda.actions.Orchestrator;
+import com.ebanx.lambda.dto.ResponseDTO;
 
 @Path("statement")
 public class Controller {
@@ -25,6 +26,11 @@ public class Controller {
         DownloaderRequest request = new DownloaderRequest(payeeId, date);
         DownloaderResponse response = new DownloaderResponse();
         orchestrator.run(request, response);
-        return Response.ok(response.getStatementCsv()).build();
+        return createResponse(response);
+    }
+
+    private Response createResponse(DownloaderResponse response) {
+        ResponseDTO responseDTO = new ResponseDTO(response.getFileUrl());
+        return Response.ok(responseDTO).build();
     }
 }
