@@ -15,4 +15,9 @@ public class ResponseDTO {
     public void setUrl(String url) {
         this.url = url;
     }
+
+    @Override
+    public String toString() {
+        return "ResponseDTO{" + "url='" + url + '\'' + '}';
+    }
 }
