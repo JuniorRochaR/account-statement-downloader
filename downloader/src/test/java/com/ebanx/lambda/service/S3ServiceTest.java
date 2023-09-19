@@ -61,35 +61,35 @@ class S3ServiceTest extends BaseTest {
         assertEquals("Error when checking account statements", exception.getMessage());
     }
 
-//    @Test
-//    void getFileUrl() {
-//        when(s3Presigner.presignGetObject(any(GetObjectPresignRequest.class))).thenReturn(createPresignedGetObjectRequest());
-//        assertEquals("http://host.docker.internal:4566", s3Service.getFileUrl(anyString()));
-//    }
-//
-//    @Test
-//    void getFileUrlException() {
-//        when(s3Presigner.presignGetObject(any(GetObjectPresignRequest.class))).thenThrow(createS3Exception(500));
-//
-//        AccountStatementApiException exception = assertThrows(AccountStatementApiException.class, () -> s3Service.getFileUrl(anyString()));
-//        assertEquals("Error when generating account statement download URL", exception.getMessage());
-//    }
+    @Test
+    void getFileUrl() {
+        when(s3Presigner.presignGetObject(any(GetObjectPresignRequest.class))).thenReturn(createPresignedGetObjectRequest());
+        assertEquals("http://host.docker.internal:4566", s3Service.getFileUrl(anyString()));
+    }
+
+    @Test
+    void getFileUrlException() {
+        when(s3Presigner.presignGetObject(any(GetObjectPresignRequest.class))).thenThrow(createS3Exception(500));
+
+        AccountStatementApiException exception = assertThrows(AccountStatementApiException.class, () -> s3Service.getFileUrl(anyString()));
+        assertEquals("Error when generating account statement download URL", exception.getMessage());
+    }
 
     private AwsServiceException createS3Exception(int statusCode) {
         return S3Exception.builder().statusCode(statusCode).build();
     }
 
-//    private PresignedGetObjectRequest createPresignedGetObjectRequest() {
-//        return PresignedGetObjectRequest.builder()
-//                .expiration(Instant.parse("2023-09-18T16:12:59.12Z"))
-//                .isBrowserExecutable(true)
-//                .signedHeaders(Map.of("header", List.of("1")))
-//                .httpRequest(
-//                        SdkHttpRequest.builder()
-//                                .protocol("http")
-//                                .host("host.docker.internal:4566")
-//                                .method(SdkHttpMethod.GET)
-//                                .build())
-//                .build();
-//    }
+    private PresignedGetObjectRequest createPresignedGetObjectRequest() {
+        return PresignedGetObjectRequest.builder()
+                .expiration(Instant.parse("2023-09-18T16:12:59.12Z"))
+                .isBrowserExecutable(true)
+                .signedHeaders(Map.of("header", List.of("1")))
+                .httpRequest(
+                        SdkHttpRequest.builder()
+                                .protocol("http")
+                                .host("host.docker.internal:4566")
+                                .method(SdkHttpMethod.GET)
+                                .build())
+                .build();
+    }
 }
