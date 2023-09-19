@@ -56,7 +56,7 @@ public class S3Service {
     }
 
     private void getS3Presigner() {
-        if (!"dev".equals(ProfileManager.getActiveProfile())) {
+        if ("prod".equals(ProfileManager.getActiveProfile())) {
             s3Presigner = S3Presigner.builder().region(Region.US_EAST_1).build();
         }
     }
