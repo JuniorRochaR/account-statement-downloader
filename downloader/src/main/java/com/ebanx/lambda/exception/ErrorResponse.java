@@ -1,9 +1,12 @@
 package com.ebanx.lambda.exception;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class ErrorResponse {
 
-    private int statusCode;
-    private String errorMessage;
+    private final int statusCode;
+    private final String errorMessage;
 
     public ErrorResponse(int statusCode, String errorMessage) {
         this.statusCode = statusCode;
@@ -14,15 +17,7 @@ public class ErrorResponse {
         return statusCode;
     }
 
-    public void setStatusCode(int statusCode) {
-        this.statusCode = statusCode;
-    }
-
     public String getErrorMessage() {
         return errorMessage;
-    }
-
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
     }
 }

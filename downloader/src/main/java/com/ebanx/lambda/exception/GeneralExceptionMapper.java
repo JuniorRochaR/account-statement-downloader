@@ -6,6 +6,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
+import com.ebanx.lambda.utils.ObjectMapperUtils;
+
 import org.jboss.logging.Logger;
 
 @Provider
@@ -18,7 +20,7 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
         LOGGER.error(e.getMessage(), e.getCause());
         ErrorResponse errorResponse = new ErrorResponse(INTERNAL_SERVER_ERROR.getStatusCode(), e.getMessage());
         return Response.status(INTERNAL_SERVER_ERROR)
-                .entity(errorResponse)
+                .entity(ObjectMapperUtils.parseToJsonString(errorResponse))
                 .build();
     }
 }
