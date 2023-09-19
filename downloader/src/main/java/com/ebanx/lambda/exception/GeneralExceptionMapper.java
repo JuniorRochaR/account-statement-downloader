@@ -6,6 +6,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
+import com.ebanx.lambda.dto.ErrorResponseDTO;
 import com.ebanx.lambda.utils.ObjectMapperUtils;
 
 import org.jboss.logging.Logger;
@@ -18,9 +19,9 @@ public class GeneralExceptionMapper implements ExceptionMapper<Exception> {
     @Override
     public Response toResponse(Exception e) {
         LOGGER.error(e.getMessage(), e.getCause());
-        ErrorResponse errorResponse = new ErrorResponse(INTERNAL_SERVER_ERROR.getStatusCode(), e.getMessage());
+        ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(INTERNAL_SERVER_ERROR.getStatusCode(), e.getMessage());
         return Response.status(INTERNAL_SERVER_ERROR)
-                .entity(ObjectMapperUtils.parseToJsonString(errorResponse))
+                .entity(ObjectMapperUtils.parseToJsonString(errorResponseDTO))
                 .build();
     }
 }

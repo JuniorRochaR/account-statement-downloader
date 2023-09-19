@@ -4,6 +4,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
+import com.ebanx.lambda.dto.ErrorResponseDTO;
 import com.ebanx.lambda.utils.ObjectMapperUtils;
 
 import org.jboss.logging.Logger;
@@ -16,9 +17,9 @@ public class AccountStatementApiExceptionMapper implements ExceptionMapper<Accou
     @Override
     public Response toResponse(AccountStatementApiException e) {
         LOGGER.error(e.getMessage(), e.getCause());
-        ErrorResponse errorResponse = new ErrorResponse(e.getResponseStatus().getStatusCode(), e.getMessage());
+        ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(e.getResponseStatus().getStatusCode(), e.getMessage());
         return Response.status(e.getResponseStatus())
-                .entity(ObjectMapperUtils.parseToJsonString(errorResponse))
+                .entity(ObjectMapperUtils.parseToJsonString(errorResponseDTO))
                 .build();
     }
 }
