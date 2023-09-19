@@ -2,6 +2,7 @@ package com.ebanx.lambda.actions;
 
 import static com.ebanx.lambda.Helper.GENERIC_DAC;
 import static com.ebanx.lambda.Helper.createDownloaderRequest;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -35,9 +36,18 @@ class RetrievePayeeIdActionTest extends BaseTest {
     }
 
     @Test
-    void executeException() {
+    void executeExceptionPayeeIdNull() {
         DownloaderRequest request = createDownloaderRequest();
         request.setDigitalAccountId(null);
+        AccountStatementApiException exception =
+                assertThrows(AccountStatementApiException.class, () -> retrievePayeeIdAction.execute(request, new DownloaderResponse()));
+        assertEquals("The payee id passed is invalid", exception.getMessage());
+    }
+
+    @Test
+    void executeExceptionPayeeIdBlank() {
+        DownloaderRequest request = createDownloaderRequest();
+        request.setDigitalAccountId(EMPTY);
         AccountStatementApiException exception =
                 assertThrows(AccountStatementApiException.class, () -> retrievePayeeIdAction.execute(request, new DownloaderResponse()));
         assertEquals("The payee id passed is invalid", exception.getMessage());
