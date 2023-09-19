@@ -31,6 +31,6 @@ class ControllerTest extends BaseTest {
         verify(orchestrator).run(any(DownloaderRequest.class), any(DownloaderResponse.class));
 
         assertEquals(200, response.getStatus());
-        assertEquals("ResponseDTO{url='null'}", response.getEntity().toString());
+        assertEquals("{\"url\":null}", response.getEntity().toString());
     }
 }
