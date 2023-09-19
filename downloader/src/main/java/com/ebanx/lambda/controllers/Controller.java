@@ -12,6 +12,7 @@ import com.ebanx.lambda.actions.DownloaderRequest;
 import com.ebanx.lambda.actions.DownloaderResponse;
 import com.ebanx.lambda.actions.Orchestrator;
 import com.ebanx.lambda.dto.ResponseDTO;
+import com.ebanx.lambda.utils.ObjectMapperUtils;
 
 @Path("statement")
 public class Controller {
@@ -31,6 +32,6 @@ public class Controller {
 
     private Response createResponse(DownloaderResponse response) {
         ResponseDTO responseDTO = new ResponseDTO(response.getFileUrl());
-        return Response.ok(responseDTO).build();
+        return Response.ok(ObjectMapperUtils.parseToJsonString(responseDTO)).build();
     }
 }
